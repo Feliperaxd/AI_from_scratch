@@ -1,6 +1,30 @@
 import numpy as np
 
 
+class FruitsData:
+
+    """
+    ----------------------------------------
+    Note: Approximate Data
+    ----------------------------------------
+    COLUMN                             INDEX
+    Name.................................0                                           
+    Minimum Diameter (cm)................1  
+    Maximum Diameter (cm)................2
+    Minimum Density (g/cm³)..............3
+    Maximum Density (g/cm³)..............4
+    Minimum Texture Level (0 ∈ 1)........5
+    Maximum Texture Level (0 ∈ 1)........6
+    """
+
+    fruits_data = [
+        ['Apple', 5, 9, 0.6, 0.8, 0.0, 0.3],
+        ['Orange', 6, 10, 0.8, 1.2, 0.4, 0.8],
+        ['Cherry', 1, 2, 0.9, 1.1, 0.0, 0.2],
+        ['lemon', 4, 8, 0.7, 1.0, 0.4, 0.8],
+        ['pomegranate', 6, 10, 0.9, 1.2, 0.0, 0.3]
+    ]
+
 class FakeFruit:
 
 
@@ -8,36 +32,14 @@ class FakeFruit:
         self: 'FakeFruit'        
     ) -> None:
 
-        """
-        ----------------------------------------
-        Note: Approximate Data
-        ----------------------------------------
-        COLUMN                             INDEX
-        Name.................................0                                           
-        Minimum Diameter (cm)................1  
-        Maximum Diameter (cm)................2
-        Minimum Density (g/cm³)..............3
-        Maximum Density (g/cm³)..............4
-        Minimum Texture Level (0 ∈ 1)........5
-        Maximum Texture Level (0 ∈ 1)........6
-        """
-
-        self.fruits_data = [
-            ['Apple', 5, 9, 0.6, 0.8, 0.0, 0.3],
-            ['Orange', 6, 10, 0.8, 1.2, 0.4, 0.8],
-            ['Cherry', 1, 2, 0.9, 1.1, 0.0, 0.2],
-            ['lemon', 4, 8, 0.7, 1.0, 0.4, 0.8],
-            ['pomegranate', 6, 10, 0.9, 1.2, 0.0, 0.3]
-        ]
-
         self.fruit_index = np.random.randint(
             low=0, 
-            high=len(self.fruits_data)
+            high=len(FruitsData.fruits_data)
         )
-        self.one_hot_vector = np.zeros(len(self.fruits_data)) #  Creates the One-hot vector 
+        self.one_hot_vector = np.zeros(len(FruitsData.fruits_data)) #  Creates the One-hot vector 
         self.one_hot_vector[self.fruit_index] = 1
 
-        self.data = self.fruits_data[self.fruit_index]
+        self.data = FruitsData.fruits_data[self.fruit_index]
         self.name = self.data[0]
 
         self.diameter = np.random.uniform(
