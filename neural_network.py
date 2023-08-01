@@ -121,11 +121,12 @@ class NeuralNetwork:
     def create(
         self: 'NeuralNetwork',
         net_shape: List[Tuple[int, int]], #  Layer = (n_inputs, n_neurons)
-        activators: List[ActivationFunctions] #  Each funcion will be used on a layer 
+        activators: List[ActivationFunctions], #  Each funcion will be used on a layer 
+        data_path: Optional[str] = 'model_data.json'
     ) -> None:
         
         self.net_shape = net_shape
-        with open('model_data.json', 'w') as file:
+        with open(data_path, 'w') as file:
             json.dump(self.data, file)
 
         for layer_shape, activator in zip(self.net_shape, activators):

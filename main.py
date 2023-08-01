@@ -1,21 +1,24 @@
-from neural_network import NeuralNetwork, Layer
-from activation_module import ActivationFunctions
-from fake_fruits import FruitsData, FakeFruit
+import os
 import numpy as np
+import matplotlib.pyplot as plt
+from neural_network import NeuralNetwork
+from fake_fruits import FruitsData, FakeFruit
+from activation_module import ActivationFunctions
 
-
-
-n_epochs = 100
 score = 0
+n_epochs = 1000000
+layer_shape = [(3, 25), (25, 25), (25, 25)]
+x_coord = []
+y_coord = []
+
+model = NeuralNetwork()
+
+model.create(
+    net_shape=layer_shape,
+    activators=[ActivationFunctions.softmax, ActivationFunctions.softmax, ActivationFunctions.softmax]
+    )
 
 for epoch in range(1, n_epochs + 1):
-    
-    model = NeuralNetwork()
-
-    model.create(
-    net_shape=[(3, 5), (5, 5)],
-    activators=[ActivationFunctions.softmax, ActivationFunctions.softmax]
-    )
 
     fruit = FakeFruit()
     inputs = np.array(
@@ -32,4 +35,24 @@ for epoch in range(1, n_epochs + 1):
     else:
         score -= 1
 
-print(score)
+    x_coord.append(epoch)
+    y_coord.append(score)
+    
+    os.system('cls')
+    print('-'*100, 
+          f'\nScore: {score}',
+          f'\nProgress: {epoch / n_epochs * 100:.3f}%',
+          f'\nRemaining epochs: {n_epochs + 1 - epoch}'
+    )
+
+model.save_data()
+plt.plot(
+    x_coord,
+    y_coord,
+    color='Red'
+)
+plt.title(f'Using Softmax\n{layer_shape}')
+plt.xlabel('Epoch')
+plt.ylabel('Score')
+plt.show()
+input()
