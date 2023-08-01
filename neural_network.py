@@ -36,12 +36,13 @@ class Layer:
     ) -> np.ndarray:
 
         self.inputs = inputs
+
         self.outputs = np.dot(
             a=inputs, 
             b=self.weights
         ) + self.biases
 
-        return self.outputs
+        return self.outputs.flatten()
 
     def backward(
         self: 'Layer',
@@ -69,9 +70,8 @@ class Layer:
         inputs: np.ndarray
     ) -> np.ndarray:
 
-        self.outputs = callable(
-            self.activator(inputs)
-        )
+        self.outputs = self.activator(inputs)
+        
         return self.outputs
 
     def normalizer(
@@ -82,7 +82,7 @@ class Layer:
         min_value = np.min(inputs)
         max_value = np.max(inputs)
         self.outputs = (inputs - min_value) / (max_value - min_value)
-
+        
         return self.outputs
 
     def categorical_crossentropy(
@@ -187,11 +187,12 @@ class NeuralNetwork:
         inputs: np.ndarray
     ) -> np.ndarray:
         
+        self.outputs = inputs
         for layer in self.layers:
-            self.outputs = layer.normalizer(inputs)
+            self.outputs = layer.normalizer(self.outputs)
             self.outputs = layer.foward(self.outputs)
             self.outputs = layer.activation(self.outputs)
-        
+
         return self.outputs               
 
     def backward_propagation(
@@ -199,12 +200,12 @@ class NeuralNetwork:
         one_hot_vector: np.ndarray
     )  -> np.ndarray:
         
-        reversed_layers = self.layers
-        reversed_layers.reverse()
+        reversed_layers = list(reversed(self.layers))
 
         for layer in reversed_layers:
             if not self.delta_outputs:
                 self.delta_outputs = self.outputs
+
             self.delta_outputs = layer.backward(
                 inputs=self.delta_outputs,
                 one_hot_vector=one_hot_vector
