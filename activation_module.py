@@ -30,7 +30,7 @@ class ActivationFunctions:
     def softmax(
         inputs: np.ndarray
     ) -> np.ndarray:
-
+        
         outputs = np.exp(inputs) / np.sum(np.exp(inputs))
         return outputs
 #:)

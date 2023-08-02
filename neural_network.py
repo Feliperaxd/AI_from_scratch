@@ -1,7 +1,7 @@
 import json
 import numpy as np
 from enum import Enum
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 from activation_module import ActivationFunctions
 
 class Utils(Enum):
@@ -14,14 +14,14 @@ class Layer:
 
     def __init__(
         self: 'Layer',
-        activator: ActivationFunctions,
-        weights: np.ndarray,
-        biases: np.ndarray
+        activator: Union[ActivationFunctions, str],
+        weights: Union[np.ndarray, List],
+        biases: Union[np.ndarray, List]
     ) -> None:
             
         self.activator = activator
-        self.weights = weights
-        self.biases = biases
+        self.weights = np.array(weights)
+        self.biases = np.array(biases)
 
         self.n_inputs = len(weights)
         self.n_neurons = len(weights[0])
@@ -70,8 +70,12 @@ class Layer:
         inputs: np.ndarray
     ) -> np.ndarray:
 
-        self.outputs = self.activator(inputs)
-        
+        if callable(self.activator):
+            self.outputs = self.activator(inputs)
+        else:
+            activation_func = getattr(ActivationFunctions, self.activator)
+            self.outputs = activation_func(inputs)
+
         return self.outputs
 
     def normalizer(
@@ -146,7 +150,7 @@ class NeuralNetwork:
         for index, layer in enumerate(self.layers):
             layer_name = f'layer_{index}'
             self.data[layer_name] = { 
-                'activator': layer.activator.__qualname__,
+                'activator': layer.activator.__name__,
                 'weights': layer.weights.tolist(),
                 'biases': layer.biases.tolist(),
                 'n_inputs': layer.n_inputs,
@@ -174,7 +178,7 @@ class NeuralNetwork:
 
             self.layers.append(
                 Layer(
-                    activator=layer['activator'],
+                    activator=getattr(ActivationFunctions, layer['activator']),
                     weights=layer['weights'],
                     biases=layer['biases']
                 )

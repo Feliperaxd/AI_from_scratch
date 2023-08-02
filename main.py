@@ -6,7 +6,7 @@ from fake_fruits import FruitsData, FakeFruit
 from activation_module import ActivationFunctions
 
 score = 0
-n_epochs = 1000000
+n_epochs = int(input('n_epochs: '))
 layer_shape = [(3, 25), (25, 25), (25, 25)]
 x_coord = []
 y_coord = []
@@ -38,11 +38,14 @@ for epoch in range(1, n_epochs + 1):
     x_coord.append(epoch)
     y_coord.append(score)
     
+    if epoch / 100 == 1:
+        model.save_data()
+
     os.system('cls')
     print('-'*100, 
           f'\nScore: {score}',
           f'\nProgress: {epoch / n_epochs * 100:.3f}%',
-          f'\nRemaining epochs: {n_epochs + 1 - epoch}'
+          f'\nRemaining epochs: {n_epochs - epoch}'
     )
 
 model.save_data()
