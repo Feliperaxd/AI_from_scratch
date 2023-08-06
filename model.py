@@ -18,14 +18,14 @@ class Model:
         #  Metrics!       
         self.score = 0
         self.acuraccy = 0
-        self.total_epochs = 0
-        self.better_score = (0, 0) #  (Epoch, Score)
-        self.better_acuraccy = (0, 0) #  (Epoch, Acuraccy)
+        self.last_epoch = 0
+        self.best_score = (0, 0) #  (Epoch, Score)
+        self.best_acuraccy = (0, 0) #  (Epoch, Acuraccy)
         self.training_count = 0
 
-        #  Coordinates!        
-        self.score_coord = []
-        self.accuracy_coord = []
+        #  Histories!        
+        self.score_history = []
+        self.accuracy_history = []
         
         #  Private!
         self._epoch_count = 0
@@ -71,14 +71,14 @@ class Model:
             #  Metrics!
             'score': self.score,
             'acuraccy': self.acuraccy,
-            'total_epochs': self.total_epochs, 
-            'better_score': self.better_score,
-            'better_acuraccy': self.better_acuraccy,
+            'last_epoch': self.last_epoch, 
+            'best_score': self.best_score,
+            'best_acuraccy': self.best_acuraccy,
             'training_count': self.training_count,
             
-            #  Coordinates!
-            'score_coord': self.score_coord,
-            'accuracy_coord': self.accuracy_coord,
+            #  Histories!
+            'score_history': self.score_history,
+            'accuracy_history': self.accuracy_history,
 
             #  Tensors!
             'weights': weights,
@@ -100,14 +100,14 @@ class Model:
         #  Metrics!
         self.score = self.data['score']
         self.acuraccy = self.data['acuraccy']
-        self.total_epochs = self.data['total_epochs']
-        self.better_score = self.data['better_score']
-        self.better_acuraccy = self.data['better_acuraccy']
+        self.last_epoch = self.data['last_epoch']
+        self.best_score = self.data['best_score']
+        self.best_acuraccy = self.data['best_acuraccy']
         self.training_count = self.data['training_count']
         
-        #  Coordinates!
-        self.score_coord = self.data['score_coord']
-        self.accuracy_coord = self.data['accuracy_coord']
+        #  Histories!
+        self.score_history = self.data['score_history']
+        self.accuracy_history = self.data['accuracy_history']
         
         self.network = NeuralNetwork(
             shape=self.data['shape'],
@@ -120,7 +120,6 @@ class Model:
         
     def training(
         self: 'Model',
-        epoch: int,
         target: Any,
         inputs: List[float],
         output_rule: Callable[[Any], Any],
@@ -132,28 +131,27 @@ class Model:
         output = output_rule(outputs)
 
         self.training_count += 1
-        self.total_epochs += 1
+        self.last_epoch += 1
         self._epoch_count += 1    
-        
+        self.score_history.append(self.score)
+
         if target == output:
             self.score += 1
             self._hit_count += 1
         else: 
             self.score -= 1
           
-        if self._epoch_count % 100 == 0:
-            self.acuraccy = float(f'{(self._hit_count / 100) * 100:.3f}')           
+        if self._epoch_count % 1000 == 0:
+            self.acuraccy = float(f'{(self._hit_count / 1000) * 100:.3f}')           
+            self.accuracy_history.append(self.acuraccy) 
             self._epoch_count = 0
             self._hit_count = 0
         
-        if self.acuraccy > self.better_acuraccy[1]:
-            self.better_acuraccy = (epoch, self.acuraccy)       
-        if self.score > self.better_score[1]:
-            self.better_score = (epoch, self.score)
+        if self.acuraccy > self.best_acuraccy[1]:
+            self.best_acuraccy = (self.last_epoch, self.acuraccy)       
+        if self.score > self.best_score[1]:
+            self.best_score = (self.last_epoch, self.score)
         
-        self.score_coord.append(self.score)
-        self.accuracy_coord.append(self.acuraccy) 
-
         return outputs, delta_outputs, output
 
     def operate(
