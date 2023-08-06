@@ -1,12 +1,8 @@
-import os
 import json
 import numpy as np
-import matplotlib.pyplot as plt
-from typing import Optional, List, Tuple, Any, Callable, Union
 from neural_network import NeuralNetwork
-from fake_fruits import FruitsData, FakeFruit
 from activation_module import ActivationFunctions
-
+from typing import Any, Callable, List, Optional, Tuple, Union
 
 class Model:
     
@@ -23,13 +19,12 @@ class Model:
         self.score = 0
         self.acuraccy = 0
         self.total_epochs = 0
-        self.better_score = [0, 0] #  [Epoch, Score]
-        self.better_acuraccy = [0, 0] #  [Epoch, Acuraccy]
+        self.better_score = (0, 0) #  (Epoch, Score)
+        self.better_acuraccy = (0, 0) #  (Epoch, Acuraccy)
         self.training_count = 0
 
         #  Coordinates!        
         self.score_coord = []
-        self.epochs_coord = []
         self.accuracy_coord = []
         
         #  Private!
@@ -83,7 +78,6 @@ class Model:
             
             #  Coordinates!
             'score_coord': self.score_coord,
-            'epochs_coord': self.epochs_coord,
             'accuracy_coord': self.accuracy_coord,
 
             #  Tensors!
@@ -113,7 +107,6 @@ class Model:
         
         #  Coordinates!
         self.score_coord = self.data['score_coord']
-        self.epochs_coord = self.data['epochs_coord']
         self.accuracy_coord = self.data['accuracy_coord']
         
         self.network = NeuralNetwork(
@@ -127,17 +120,19 @@ class Model:
         
     def training(
         self: 'Model',
-        inputs: np.ndarray,
+        epoch: int,
         target: Any,
+        inputs: List[float],
         output_rule: Callable[[Any], Any],
         one_hot_vector: np.ndarray,
     ) -> Tuple[np.ndarray, np.ndarray, Any]:
         
-        outputs = self.foward_propagation(inputs)
-        delta_outputs = self.backward_propagation(one_hot_vector)
+        outputs = self.network.foward_propagation(inputs)
+        delta_outputs = self.network.backward_propagation(one_hot_vector)
         output = output_rule(outputs)
-        
+
         self.training_count += 1
+        self.total_epochs += 1
         self._epoch_count += 1    
         
         if target == output:
@@ -146,10 +141,19 @@ class Model:
         else: 
             self.score -= 1
           
-        if self._epoch_count % 1000 == 0:
-            self.acuraccy = f'{(self._hit_count / 1000) * 100:.3f}'        
-            TERMINAR ISSO NÃO PODE SAIR STRING 
+        if self._epoch_count % 100 == 0:
+            self.acuraccy = float(f'{(self._hit_count / 100) * 100:.3f}')           
+            self._epoch_count = 0
+            self._hit_count = 0
         
+        if self.acuraccy > self.better_acuraccy[1]:
+            self.better_acuraccy = (epoch, self.acuraccy)       
+        if self.score > self.better_score[1]:
+            self.better_score = (epoch, self.score)
+        
+        self.score_coord.append(self.score)
+        self.accuracy_coord.append(self.acuraccy) 
+
         return outputs, delta_outputs, output
 
     def operate(
@@ -162,4 +166,4 @@ class Model:
         self.backward_propagation(one_hot_vector)
         
         return outputs
-    
+#:)
