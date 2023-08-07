@@ -1,4 +1,6 @@
 import os
+import threading
+import time
 import numpy as np
 from model import Model
 import matplotlib.pyplot as plt
@@ -11,17 +13,12 @@ if not os.path.exists('model_data.json'):
         [(5, 25), (25, 25), (25, 25)], 
         ['softmax', 'softmax', 'softmax']
         )
-    model.create(
-        [(5, 25), (25, 25), (25, 25)], 
-        ['softmax', 'softmax', 'softmax'],
-        'backup.json'
-        )
 else:
     model.load_data()
 
 n_epochs = int(input('n_epochs: ')) + 1
-for epoch in range(1, n_epochs):
-
+batch_size = int(input('batch_size: '))
+def training():
     fruit = FakeFruit()
     model.training(
         target=fruit.name,
@@ -35,11 +32,17 @@ for epoch in range(1, n_epochs):
         output_rule=lambda x:FruitsData.fruits_data[np.argmax(x)][0],
         one_hot_vector=fruit.one_hot_vector
     )
+    
 
-    if epoch % 1000 == 0:
-        model.save_data('backup.json')
-        model.save_data()
-        
+threads = []
+for epoch in range(1, n_epochs):
+    for batch in range(batch_size):
+        thread = threading.Thread(target=training)
+        threads.append(thread)
+        thread.start()
+    
+    model.last_epoch += 1
+
     os.system('cls')
     print(f'''
             ---Progress {(epoch / n_epochs) * 100:.2f}%---
@@ -51,7 +54,11 @@ for epoch in range(1, n_epochs):
             training_count: {model.training_count}
             '''
         )
+    
+    for thread in threads:
+        thread.join()
 
+model.save_data()
 fig, axs = plt.subplots(1, 2, figsize=(12, 5))  
 fig.suptitle(f'Training', fontsize=20)
 
@@ -65,7 +72,7 @@ axs[0].set_xlabel('Epochs')
 axs[0].set_ylabel('Metrics')
 
 axs[1].plot(
-    [x for x in range(model.last_epoch)],
+    [x for x in range(model.training_count)],
     model.score_history,
     color='Red'
 )

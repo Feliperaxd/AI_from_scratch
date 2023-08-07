@@ -46,7 +46,7 @@ class Model:
             shape=self.shape,
             activators=self.activators
         )
-        self.network.inject_tensors()
+        self.network.inject_parameters()
         
         with open(data_path, 'w') as file:
             file.seek(0)        
@@ -59,7 +59,7 @@ class Model:
     
         weights = []
         biases = []
-        for layer_weights, layer_biases in zip(*self.network.get_tensors()):
+        for layer_weights, layer_biases in zip(*self.network.get_parameters()):
             weights.append(layer_weights.tolist())
             biases.append(layer_biases.tolist())
         
@@ -113,7 +113,7 @@ class Model:
             shape=self.data['shape'],
             activators=self.data['activators']
         )
-        self.network.inject_tensors(
+        self.network.inject_parameters(
             weights=[np.array(x) for x in self.data['weights']],
             biases=[np.array(x) for x in self.data['biases']]
         )
@@ -131,7 +131,6 @@ class Model:
         output = output_rule(outputs)
 
         self.training_count += 1
-        self.last_epoch += 1
         self._epoch_count += 1    
         self.score_history.append(self.score)
 
@@ -153,7 +152,7 @@ class Model:
             self.best_score = (self.last_epoch, self.score)
         
         return outputs, delta_outputs, output
-
+    
     def operate(
         self: 'Model',
         inputs: np.ndarray,

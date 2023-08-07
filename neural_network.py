@@ -1,4 +1,3 @@
-import json
 import numpy as np
 from enum import Enum
 from typing import List, Optional, Tuple, Union
@@ -50,6 +49,7 @@ class Layer:
         one_hot_vector: np.ndarray
     ) -> None:
 
+        
         self.delta_output = (inputs - one_hot_vector) / (len(one_hot_vector) - 1)
 
         grad_weights = np.outer(
@@ -123,37 +123,36 @@ class NeuralNetwork:
         self.delta_outputs = None
         
         self.layers = []
-        self._weight_tensor = []
-        self._bias_tensor = []
+        self._weights = []
+        self._biases = []
     
-    def inject_tensors(
+    def inject_parameters(
         self: 'NeuralNetwork',
         weights: Optional[List[np.ndarray]] = None,
         biases: Optional[List[np.ndarray]] = None
-    ) -> None:
+    ) -> None:      
         
-        self.layers.clear()       
-        self._weight_tensor.clear()
-        self._bias_tensor.clear()
-        
-        if not self._weight_tensor:
+        if weights is None:
+            self._weights.clear()
             for layer_shape in self.shape:
-                self._weight_tensor.append(
+                self._weights.append(
                     0.10 * np.random.randn(layer_shape[0], layer_shape[1])
                 )
         else:
-            self._weight_tensor = weights
+            self._weights = weights
                 
-        if not self._bias_tensor:
+        if biases is None:
+            self._biases.clear()
             for layer_shape in self.shape:
-                self._bias_tensor.append(
+                self._biases.append(
                    np.zeros((1, layer_shape[1]))
                 )
         else:
-            self._bias_tensor = biases
-        
+            self._biases = biases
+            
+        self.layers.clear() 
         for layer_shape, layer_activator, layer_weights, layer_biases in zip(
-            self.shape, self.activators, self._weight_tensor, self._bias_tensor):
+            self.shape, self.activators, self._weights, self._biases):
             self.layers.append(
                 Layer(
                     activator=layer_activator,
@@ -162,18 +161,18 @@ class NeuralNetwork:
                 )
             )
     
-    def get_tensors(
+    def get_parameters(
         self: 'NeuralNetwork'
     ) -> Tuple[List[np.ndarray], List[np.ndarray]]:
         
-        self._weight_tensor.clear()
-        self._bias_tensor.clear()
+        self._weights.clear()
+        self._biases.clear()
         
         for layer in self.layers:
-            self._weight_tensor.append(layer.weights)
-            self._bias_tensor.append(layer.biases)
+            self._weights.append(layer.weights)
+            self._biases.append(layer.biases)
         
-        return self._weight_tensor, self._bias_tensor
+        return self._weights, self._biases
         
     def foward_propagation(
         self: 'NeuralNetwork',
@@ -196,11 +195,12 @@ class NeuralNetwork:
         reversed_layers = list(reversed(self.layers))
 
         for layer in reversed_layers:
-            if not self.delta_outputs:
+            if self.delta_outputs is None:
                 self.delta_outputs = self.outputs
 
             self.delta_outputs = layer.backward(
                 inputs=self.delta_outputs,
                 one_hot_vector=one_hot_vector
             )
+
 #:)
