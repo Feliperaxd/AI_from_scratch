@@ -10,50 +10,40 @@ model = Model()
 if not os.path.exists('model_data.json'):
     model.create(
         [(5, 25), (25, 25), (25, 25)], 
-        ['softmax', 'softmax', 'softmax']
+        ['softmax', 'softmax', 'softmax'],
+        ['minmax', None, None]
         )
 else:
     model.load_data()
 
 n_epochs = int(input('n_epochs: ')) + 1
-batch_size = int(input('batch_size: '))
-def training():
+for epoch in range(1, n_epochs):
+
     fruit = FakeFruit()
-    model.training_one(
-        target=fruit.name,
-        inputs=[
+    model.training(
+        inputs=np.array([
             fruit.diameter,
             fruit.weight,
             fruit.texture,
             fruit.ph_level,
             fruit.sugar_level
-        ],
+        ]),
+        target=fruit.name,
         output_rule=lambda x:FruitsData.fruits_data[np.argmax(x)][0],
         one_hot_vector=fruit.one_hot_vector
     )
     
-
-threads = []
-for epoch in range(1, n_epochs):
-    for batch in range(batch_size):
-        thread = threading.Thread(target=training)
-        threads.append(thread)
-        thread.start()
-    
-    model.total_epochs += 1
     os.system('cls')
     print(f'''
             ---Progress {(epoch / n_epochs) * 100:.2f}%---
             score: {model.score}
             acuraccy: {model.acuraccy}%
-            total_epochs: {model.total_epochs}
+            epoch_count: {model.epoch_count}
+            input_count: {model.input_count}
             best_score: {model.best_score[1]}
             best_acuraccy: {model.best_acuraccy[1]}%
             '''
         )
-
-    for thread in threads:
-        thread.join()
 
 model.save_data()
 fig, axs = plt.subplots(1, 2, figsize=(12, 5))  
@@ -69,7 +59,7 @@ axs[0].set_xlabel('Epochs')
 axs[0].set_ylabel('Metrics')
 
 axs[1].plot(
-    [x for x in range(model.total_epochs)],
+    [x for x in range(model.input_count)],
     model.score_history,
     color='Red'
 )
