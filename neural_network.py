@@ -58,11 +58,12 @@ class NeuralNetwork:
             self.layers.append(
                 Layer(
                     activator=layer_activator,
-                    weights=layer_weights,
+                    weights=layer_weights, COLOCAR Normalizers
                     biases=layer_biases
                 )
             )
-    
+
+        
     def get_layers_parameters(
         self: 'NeuralNetwork'
     ) -> Tuple[List[np.ndarray], List[np.ndarray]]:
