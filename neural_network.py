@@ -27,7 +27,6 @@ class Layer:
 
         self.inputs = None
         self.outputs = None
-        self.delta_outputs = None
 
     def foward(
         self: 'Layer',
@@ -45,25 +44,32 @@ class Layer:
 
     def backward(
         self: 'Layer',
-        inputs: np.ndarray,
+        pred_outputs: np.ndarray,
         one_hot_vector: np.ndarray
-    ) -> None:
+    ) -> Tuple[np.ndarray, np.ndarray]:
 
-        
-        self.delta_output = (inputs - one_hot_vector) / (len(one_hot_vector) - 1)
+        grad_outputs = pred_outputs - one_hot_vector
 
         grad_weights = np.outer(
             a=self.inputs, 
-            b=self.delta_output
+            b=grad_outputs
         )
         grad_biases = np.sum(
-            a=self.delta_output, 
+            a=grad_outputs, 
             axis=0, 
             keepdims=True
         )
+        return grad_weights, grad_biases, grad_outputs
 
+    def update_parameters(
+        self: 'Layer',
+        grad_weights: np.ndarray,
+        grad_biases: np.ndarray
+    ) -> None:
+        
         self.weights -= Utils.LEARNING_RATE.value * grad_weights
         self.biases -= Utils.LEARNING_RATE.value * grad_biases
+
 
     def activation(
         self: 'Layer',
@@ -119,12 +125,13 @@ class NeuralNetwork:
         self.shape = shape
         self.activators = activators
         
+        self.inputs = None
         self.outputs = None
-        self.delta_outputs = None
         
         self.layers = []
         self._weights = []
         self._biases = []
+        self._grad_outputs = None
     
     def inject_parameters(
         self: 'NeuralNetwork',
@@ -179,6 +186,7 @@ class NeuralNetwork:
         inputs: np.ndarray
     ) -> np.ndarray:
         
+        self.inputs = inputs
         self.outputs = inputs
         for layer in self.layers:
             self.outputs = layer.normalizer(self.outputs)
@@ -195,12 +203,15 @@ class NeuralNetwork:
         reversed_layers = list(reversed(self.layers))
 
         for layer in reversed_layers:
-            if self.delta_outputs is None:
-                self.delta_outputs = self.outputs
+            if self._grad_outputs is None:
+                self._grad_outputs = self.outputs
 
-            self.delta_outputs = layer.backward(
-                inputs=self.delta_outputs,
+            grad_weights, grad_biases, self._grad_outputs = layer.backward(
+                pred_outputs=self.outputs,
                 one_hot_vector=one_hot_vector
             )
-
+            layer.update_parameters(
+                grad_weights=grad_weights,
+                grad_biases=grad_biases
+            )
 #:)

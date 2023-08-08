@@ -1,6 +1,5 @@
 import os
 import threading
-import time
 import numpy as np
 from model import Model
 import matplotlib.pyplot as plt
@@ -42,7 +41,6 @@ for epoch in range(1, n_epochs):
         thread.start()
     
     model.last_epoch += 1
-
     os.system('cls')
     print(f'''
             ---Progress {(epoch / n_epochs) * 100:.2f}%---
@@ -54,7 +52,7 @@ for epoch in range(1, n_epochs):
             training_count: {model.training_count}
             '''
         )
-    
+    USAR BATCH DO JEITO CORRETO
     for thread in threads:
         thread.join()
 
