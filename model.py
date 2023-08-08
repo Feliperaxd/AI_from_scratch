@@ -1,4 +1,5 @@
 import json
+import threading
 import numpy as np
 from neural_network import NeuralNetwork
 from activation_module import ActivationFunctions
@@ -18,10 +19,9 @@ class Model:
         #  Metrics!       
         self.score = 0
         self.acuraccy = 0
-        self.last_epoch = 0
+        self.total_epochs = 0
         self.best_score = (0, 0) #  (Epoch, Score)
         self.best_acuraccy = (0, 0) #  (Epoch, Acuraccy)
-        self.training_count = 0
 
         #  Histories!        
         self.score_history = []
@@ -71,10 +71,9 @@ class Model:
             #  Metrics!
             'score': self.score,
             'acuraccy': self.acuraccy,
-            'last_epoch': self.last_epoch, 
+            'total_epochs': self.total_epochs, 
             'best_score': self.best_score,
             'best_acuraccy': self.best_acuraccy,
-            'training_count': self.training_count,
             
             #  Histories!
             'score_history': self.score_history,
@@ -100,10 +99,9 @@ class Model:
         #  Metrics!
         self.score = self.data['score']
         self.acuraccy = self.data['acuraccy']
-        self.last_epoch = self.data['last_epoch']
+        self.total_epochs = self.data['total_epochs']
         self.best_score = self.data['best_score']
         self.best_acuraccy = self.data['best_acuraccy']
-        self.training_count = self.data['training_count']
         
         #  Histories!
         self.score_history = self.data['score_history']
@@ -118,7 +116,7 @@ class Model:
             biases=[np.array(x) for x in self.data['biases']]
         )
         
-    def training(
+    def training_one(
         self: 'Model',
         target: Any,
         inputs: List[float],
@@ -127,10 +125,9 @@ class Model:
     ) -> Tuple[np.ndarray, np.ndarray, Any]:
         
         outputs = self.network.foward_propagation(inputs)
-        delta_outputs = self.network.backward_propagation(one_hot_vector)
+        grad_outputs = self.network.backward_propagation(one_hot_vector)
         output = output_rule(outputs)
 
-        self.training_count += 1
         self._epoch_count += 1    
         self.score_history.append(self.score)
 
@@ -147,20 +144,9 @@ class Model:
             self._hit_count = 0
         
         if self.acuraccy > self.best_acuraccy[1]:
-            self.best_acuraccy = (self.last_epoch, self.acuraccy)       
+            self.best_acuraccy = (self.total_epochs, self.acuraccy)       
         if self.score > self.best_score[1]:
-            self.best_score = (self.last_epoch, self.score)
+            self.best_score = (self.total_epochs, self.score)
         
-        return outputs, delta_outputs, output
-    
-    def operate(
-        self: 'Model',
-        inputs: np.ndarray,
-        one_hot_vector: np.ndarray
-    ) -> np.ndarray:
-        
-        outputs = self.foward_propagation(inputs)
-        self.backward_propagation(one_hot_vector)
-        
-        return outputs
+        return outputs, grad_outputs, output
 #:)

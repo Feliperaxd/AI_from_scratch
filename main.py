@@ -19,7 +19,7 @@ n_epochs = int(input('n_epochs: ')) + 1
 batch_size = int(input('batch_size: '))
 def training():
     fruit = FakeFruit()
-    model.training(
+    model.training_one(
         target=fruit.name,
         inputs=[
             fruit.diameter,
@@ -40,19 +40,18 @@ for epoch in range(1, n_epochs):
         threads.append(thread)
         thread.start()
     
-    model.last_epoch += 1
+    model.total_epochs += 1
     os.system('cls')
     print(f'''
             ---Progress {(epoch / n_epochs) * 100:.2f}%---
             score: {model.score}
             acuraccy: {model.acuraccy}%
-            last_epoch: {model.last_epoch}
+            total_epochs: {model.total_epochs}
             best_score: {model.best_score[1]}
             best_acuraccy: {model.best_acuraccy[1]}%
-            training_count: {model.training_count}
             '''
         )
-    USAR BATCH DO JEITO CORRETO
+
     for thread in threads:
         thread.join()
 
@@ -70,7 +69,7 @@ axs[0].set_xlabel('Epochs')
 axs[0].set_ylabel('Metrics')
 
 axs[1].plot(
-    [x for x in range(model.training_count)],
+    [x for x in range(model.total_epochs)],
     model.score_history,
     color='Red'
 )
