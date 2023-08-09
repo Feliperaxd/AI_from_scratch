@@ -34,7 +34,6 @@ class Layer:
     ) -> np.ndarray:
 
         self.inputs = inputs
-
         self.outputs = np.dot(
             a=inputs, 
             b=self.weights

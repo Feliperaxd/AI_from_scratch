@@ -16,24 +16,37 @@ if not os.path.exists('model_data.json'):
 else:
     model.load_data()
 
-n_epochs = int(input('n_epochs: ')) + 1
-for epoch in range(1, n_epochs):
-
+all_inputs = []
+all_targets = []
+all_one_hot_vectors = []
+def mise_en_place():
     fruit = FakeFruit()
-    model.training(
-        inputs=np.array([
+    all_inputs.append(
+        [
             fruit.diameter,
-            fruit.weight,
+            fruit.diameter,
             fruit.texture,
             fruit.ph_level,
             fruit.sugar_level
-        ]),
-        target=fruit.name,
+        ]
+    )
+    all_targets.append(fruit.name)
+    all_one_hot_vectors.append(fruit.one_hot_vector)
+    
+n_epochs = int(input('n_epochs: ')) + 1
+batch_size = int(input('batch_size: '))
+for epoch in range(1, n_epochs):
+
+    for i in range(batch_size):
+        mise_en_place()
+    
+    model.batch_training(
+        all_inputs=np.array(all_inputs),
+        all_targets=all_targets,
         output_rule=lambda x:FruitsData.fruits_data[np.argmax(x)][0],
-        one_hot_vector=fruit.one_hot_vector
+        all_one_hot_vectors=all_one_hot_vectors
     )
     
-    os.system('cls')
     print(f'''
             ---Progress {(epoch / n_epochs) * 100:.2f}%---
             score: {model.score}
