@@ -50,19 +50,20 @@ class NeuralNetwork:
                    np.zeros((1, layer_shape[1]))
                 )
         else:
-            self._biases = biases
-            
+            self._biases = biases 
+
         self.layers.clear() 
         for layer_shape, layer_activator, layer_weights, layer_biases in zip(
             self.shape, self.activators, self._weights, self._biases):
             self.layers.append(
                 Layer(
                     activator=layer_activator,
-                    weights=layer_weights, COLOCAR Normalizers
+                    weights=layer_weights, 
                     biases=layer_biases
                 )
             )
-
+        for layer, normalizer in zip(self.layers, self.normalizers):
+            layer.normalizer = normalizer
         
     def get_layers_parameters(
         self: 'NeuralNetwork'
