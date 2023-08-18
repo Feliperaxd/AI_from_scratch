@@ -1,4 +1,5 @@
 import json
+import threading
 import numpy as np
 from neural_network import NeuralNetwork
 from utils import ActivationFunctions, Normalizers
@@ -149,16 +150,12 @@ class Model:
         inputs: np.ndarray,
         target: List[Any],
         output_rule: Callable[[Any], Any],
-        one_hot_vector: np.ndarray,
-        layer_gradients: Optional[List[np.ndarray, np.ndarray]] = None
-    ) -> Tuple[np.ndarray, Any]:
+        one_hot_vector: np.ndarray
+    ) -> Tuple[np.ndarray, Any]: #--------------------------------------------------------
         
         outputs = self.network.foward_propagation(inputs)
         self.network.backward_propagation(one_hot_vector)    
         output = output_rule(outputs)
-        
-        if layer_gradients is None:
-            self.network.update_layers() #  Issue
         
         self._metric_count(
             target=target,
@@ -171,16 +168,18 @@ class Model:
         all_inputs: np.ndarray,
         all_targets: Any,
         output_rule: Callable[[Any], Any],
-        all_one_hot_vectors: np.ndarray
+        all_one_hot_vectors: np.ndarray#--------------------------------------------------------
     )  -> None:
         
-        pass 
-        
+        thread = threading.Thread(
+            target=self._metric_count()
+        )
+
     def classify(
         self: 'Model',
         inputs: np.ndarray,
         output_rule: Callable[[Any], Any],
     ) -> Any:
-        
+             
         pass
 #:)

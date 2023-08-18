@@ -10,8 +10,8 @@ model = Model()
 
 if not os.path.exists('model_data.json'):
     model.create(
-        [(5, 25), (25, 25), (25, 25), (25, 25)], 
-        ['leaky_relu', 'leaky_relu', 'leaky_relu',  'softmax'],
+        [(5, 25), (25, 25), (25, 25)], 
+        ['leaky_relu', 'leaky_relu',  'softmax'],
         ['minmax', 'minmax', 'minmax']
         )
 else:

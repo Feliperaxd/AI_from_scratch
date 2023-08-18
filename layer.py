@@ -46,7 +46,7 @@ class Layer:
         self: 'Layer',
         pred_outputs: np.ndarray,
         one_hot_vector: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    ) -> None:
 
         self.grad_outputs = pred_outputs - one_hot_vector
 
@@ -59,8 +59,7 @@ class Layer:
             axis=0, 
             keepdims=True
         )
-        return self.grad_weights, self.grad_biases, self.grad_outputs
-
+        
     def update(
         self: 'Layer',
     ) -> None:
