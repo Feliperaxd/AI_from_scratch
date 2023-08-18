@@ -1,4 +1,5 @@
 import numpy as np
+from typing import Optional
 
 class LossCalculations:
     
@@ -53,6 +54,15 @@ class ActivationFunctions:
         outputs = np.maximum(0, inputs)
         return outputs
 
+    @staticmethod
+    def leaky_relu(
+        inputs: np.ndarray,
+        slope: Optional[float] = 0.01
+    ) -> np.ndarray:
+        
+        outputs = np.maximum(slope * inputs, inputs)
+        return outputs
+        
     @staticmethod
     def tanh(
         inputs: np.ndarray

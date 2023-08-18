@@ -2,6 +2,7 @@ import numpy as np
 from typing import Optional, Tuple, Union
 from utils import ActivationFunctions, Normalizers
 
+
 class Layer:
 
 
@@ -66,6 +67,8 @@ class Layer:
         
         self.weights -= 0.01 * self.grad_weights
         self.biases -= 0.01 * self.grad_biases
+        self.grad_weights = None
+        self.grad_biases = None
 
     def activation(
         self: 'Layer',

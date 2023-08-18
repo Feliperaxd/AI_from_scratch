@@ -26,8 +26,6 @@ class NeuralNetwork:
         #  Private!
         self._weights = []
         self._biases = []
-        self._grad_weights = []
-        self._grad_biases = []
         self._grad_outputs = None
     
     def inject_layers(
@@ -81,22 +79,6 @@ class NeuralNetwork:
         
         return self._weights, self._biases
     
-    def get_gradients(
-        self: 'NeuralNetwork'
-    ) -> Tuple[List[np.ndarray], List[np.ndarray]]:
-        
-        self._grad_weights.clear()
-        self._grad_biases.clear()
-        
-        for layer in self.layers:
-            self._grad_weights.append(
-                layer.grad_weights
-            )
-            self._grad_biases.append(
-                layer.grad_biases
-            )
-        return self._grad_weights, self._grad_biases
-    
     def update_layers(
         self: 'NeuralNetwork'
     ) -> None:
@@ -129,7 +111,7 @@ class NeuralNetwork:
                 self._grad_outputs = self.outputs
 
             self._grad_outputs = layer.backward(
-                pred_outputs=self._grad_outputs,
+                pred_outputs=self.outputs,
                 one_hot_vector=one_hot_vector
             )[2]
 #:)

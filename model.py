@@ -1,9 +1,9 @@
 import json
 import numpy as np
-import threading
 from neural_network import NeuralNetwork
 from utils import ActivationFunctions, Normalizers
 from typing import Any, Callable, List, Optional, Tuple, Union
+
 
 class Model:
     
@@ -20,7 +20,6 @@ class Model:
         self.score = 0
         self.acuraccy = 0
         self.total_epochs = 0
-        self.total_inputs = 0
         self.best_score = (0, 0) #  (Epoch, Score)
         self.best_acuraccy = (0, 0) #  (Epoch, Acuraccy)
         
@@ -30,10 +29,7 @@ class Model:
         
         #  Private!
         self._hit_count = 0
-        self._input_count = 0
-        self._score_count = 0
-        self._batch_grads = []
-        self._batch_threads = []
+        self._count_to_set_accuracy = 0
         
     def create(
         self: 'Model',
@@ -76,7 +72,6 @@ class Model:
             'score': self.score,
             'acuraccy': self.acuraccy,
             'total_epochs': self.total_epochs, 
-            'total_inputs': self.total_inputs,
             'best_score': self.best_score,
             'best_acuraccy': self.best_acuraccy,
             
@@ -92,7 +87,7 @@ class Model:
         with open(data_path, 'w') as file:
             file.seek(0)        
             json.dump(self.data, file)
-            
+        
     def load_data(
         self: 'NeuralNetwork',
         data_path: Optional[str] = 'model_data.json'
@@ -105,7 +100,6 @@ class Model:
         self.score = self.data['score']
         self.acuraccy = self.data['acuraccy']
         self.total_epochs = self.data['total_epochs']
-        self.total_inputs = self.data['total_inputs']
         self.best_score = self.data['best_score']
         self.best_acuraccy = self.data['best_acuraccy']
         
@@ -121,28 +115,7 @@ class Model:
         self.network.inject_layers(
             weights=[np.array(x) for x in self.data['weights']],
             biases=[np.array(x) for x in self.data['biases']]
-        )
-    
-    def _get_metric(
-        self: 'Model'
-    ) -> None:
-        
-        self.score_history.append(self.score)
-        if self._input_count % 100 == 0:
-            self.score += float(f'{(self._score_count / 100):.3f}')
-            self.acuraccy = float(f'{(self._hit_count / 100) * 100:.3f}')           
-            
-            self.score_history.append(self.score)
-            self.accuracy_history.append(self.acuraccy)
-             
-            self._input_count = 0
-            self._score_count = 0
-            self._hit_count = 0
-            
-        if self.acuraccy > self.best_acuraccy[1]:
-            self.best_acuraccy = (self.total_epochs, self.acuraccy)       
-        if self.score > self.best_score[1]:
-            self.best_score = (self.total_epochs, self.score)
+        )        
         
     def _metric_count(
         self: 'Model',
@@ -150,58 +123,64 @@ class Model:
         output: Any
     ) -> None:
         
-        self.total_inputs += 1
-        self._input_count += 1
+        self.total_epochs += 1
+        self._count_to_set_accuracy += 1
         
         if target == output:
-            self._score_count += 1
+            self.score += 1
             self._hit_count += 1
         else: 
-            self._score_count -= 1        
-
+            self.score -= 1        
         
-    def _get(
+        self.score_history.append(self.score)
+        if self._count_to_set_accuracy % 1000 == 0:
+            self.acuraccy = float(f'{(self._hit_count / 1000) * 100:.3f}')           
+            self.accuracy_history.append(self.acuraccy)
+            self._hit_count = 0
+            self._count_to_set_accuracy = 0
+            
+        if self.acuraccy > self.best_acuraccy[1]:
+            self.best_acuraccy = (self.total_epochs, self.acuraccy)       
+        if self.score > self.best_score[1]:
+            self.best_score = (self.total_epochs, self.score)   
+    
+    def learn(
         self: 'Model',
         inputs: np.ndarray,
-        target: Any,
+        target: List[Any],
         output_rule: Callable[[Any], Any],
-        one_hot_vector: np.ndarray
-    ) -> None:
+        one_hot_vector: np.ndarray,
+        layer_gradients: Optional[List[np.ndarray, np.ndarray]] = None
+    ) -> Tuple[np.ndarray, Any]:
         
-        private_network = self.network
-        outputs = private_network.foward_propagation(inputs)
-        private_network.backward_propagation(one_hot_vector)    
+        outputs = self.network.foward_propagation(inputs)
+        self.network.backward_propagation(one_hot_vector)    
         output = output_rule(outputs)
-    
-        self._batch_grads.append(private_network.get_gradients())
-       
         
+        if layer_gradients is None:
+            self.network.update_layers() #  Issue
+        
+        self._metric_count(
+            target=target,
+            output=output
+        )
+        return outputs, output
+    
     def batch_training(
         self: 'Model',
         all_inputs: np.ndarray,
         all_targets: Any,
         output_rule: Callable[[Any], Any],
         all_one_hot_vectors: np.ndarray
-    )  -> np.ndarray:
-    
-        self._batch_grads.clear()
-        self._batch_threads.clear()
-        for inputs, target, one_hot_vector in zip(
-            all_inputs, all_targets, all_one_hot_vectors
-        ):
-            thread = threading.Thread(
-                target=self._get, 
-                args=(inputs, target, output_rule, one_hot_vector)
-            )
-            thread.start()
-            self._batch_threads.append(thread)
+    )  -> None:
         
-        batch_grad_weights = [x[0] for x in self._batch_grads]
-        batch_grad_biases = [x[1] for x in self._batch_grads]             
+        pass 
         
+    def classify(
+        self: 'Model',
+        inputs: np.ndarray,
+        output_rule: Callable[[Any], Any],
+    ) -> Any:
         
-        for thread in self._batch_threads:
-            thread.join()   
-        
-        self.total_epochs += 1        
+        pass
 #:)
