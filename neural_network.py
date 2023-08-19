@@ -95,11 +95,21 @@ class NeuralNetwork:
         return self._grad_weights, self._grad_biases
         
     def update_layers(
-        self: 'NeuralNetwork'
+        self: 'NeuralNetwork',
+        grad_weights: Optional[List[float]] = None,
+        grad_biases: Optional[List[float]] = None
     ) -> None:
         
-        for layer in self.layers:
-            layer.update()
+        if grad_weights is None:
+            grad_weights = [None for _ in range(len(self.layers))]
+        if grad_biases is None:
+            grad_biases = [None for _ in range(len(self.layers))]    
+        
+        for gw, gb, layer in zip(self.layers):
+            layer.update(
+                grad_weights=gw,
+                grad_biases=gb
+            )
         
     def foward_propagation(
         self: 'NeuralNetwork',

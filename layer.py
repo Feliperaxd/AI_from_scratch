@@ -62,10 +62,18 @@ class Layer:
         
     def update(
         self: 'Layer',
+        grad_weights: Optional[float] = None,
+        grad_biases: Optional[float] = None
     ) -> None:
         
+        if grad_weights is not None:
+            self.grad_weights = grad_weights
+        if grad_biases is not None:    
+            self.grad_biases = grad_biases
+            
         self.weights -= 0.01 * self.grad_weights
         self.biases -= 0.01 * self.grad_biases
+        
         self.grad_weights = None
         self.grad_biases = None
 

@@ -31,7 +31,9 @@ class Model:
         #  Private!
         self._hit_count = 0
         self._count_to_set_accuracy = 0
-        
+        self._avg_weight_gradients = []
+        self._avg_bias_gradients = []
+
     def create(
         self: 'Model',
         shape: List[Tuple[int, int]], #  Layer = (n_inputs, n_neurons)
@@ -151,16 +153,29 @@ class Model:
         target: List[Any],
         output_rule: Callable[[Any], Any],
         one_hot_vector: np.ndarray
-    ) -> Tuple[np.ndarray, Any]: #--------------------------------------------------------
+    ) -> Tuple[np.ndarray, Any]: 
         
         outputs = self.network.foward_propagation(inputs)
         self.network.backward_propagation(one_hot_vector)    
-        output = output_rule(outputs)
+        output = output_rule(outputs)    
         
+        #  Add in the list to calculate the average!
+        #  NOTE: This list must have previously a zero for each layer! 
+        for layer_index, (gw, gb) in enumerate(zip(*self.network.get_layers_gradients)):
+            self._avg_weight_gradients.insert(
+                __index=layer_index,
+                __object=self._avg_weight_gradients[layer_index] + gw
+            )
+            self._avg_bias_gradients.insert(
+                __index=layer_index,
+                __object=self._avg_bias_gradients[layer_index] + gb
+            )
+            
         self._metric_count(
             target=target,
             output=output
         )
+        
         return outputs, output
     
     def batch_training(
@@ -168,12 +183,28 @@ class Model:
         all_inputs: np.ndarray,
         all_targets: Any,
         output_rule: Callable[[Any], Any],
-        all_one_hot_vectors: np.ndarray#--------------------------------------------------------
+        all_one_hot_vectors: np.ndarray
     )  -> None:
         
+        batch_size = len(all_inputs)
+        
+        #  Adding a zero per layer!
+        self._avg_weight_gradients = [0 for _ in range(len(self.network.layers))]
+        self._avg_bias_gradients = [0 for _ in range(len(self.network.layers))]
+
         thread = threading.Thread(
-            target=self._metric_count()
+            target=self.learn()
         )
+        
+        for layer_index, (avg_gw, avg_gw) in enumerate(zip(self._avg_weight_gradients, self._avg_bias_gradients)):
+            self._avg_weight_gradients.insert(
+                __index=layer_index,
+                __object=self._avg_weight_gradients[layer_index] / batch_size
+            ) 
+            self._avg_bias_gradients.insert(
+                __index=layer_index,
+                __object=self._avg_bias_gradients[layer_index] / batch_size
+            )   
 
     def classify(
         self: 'Model',
