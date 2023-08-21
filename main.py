@@ -17,26 +17,37 @@ if not os.path.exists('model_data.json'):
 else:
     model.load_data()
 
-n_epochs = int(input('n_epochs: ')) + 1
+all_inputs = []
+all_targets = []
+all_one_hot_vectors = []
+
+n_epochs = 10
+batch_size = 10
+
 for epoch in range(1, n_epochs):
     
-    fruit = FakeFruit()
-    model.learn(
-        inputs=np.array([
-            fruit.weight,
-            fruit.texture,
-            fruit.diameter, 
-            fruit.ph_level, 
-            fruit.sugar_level
-            ]),
-        target=fruit.name,
-        output_rule=lambda x:FruitsData.fruits_data[np.argmax(x)][0],
-        one_hot_vector=fruit.one_hot_vector
-    )
+    print('-' * 100)
+    for _ in range(batch_size):
+        fruit = FakeFruit()
+        all_inputs.append(
+            [
+                fruit.weight,
+                fruit.texture,
+                fruit.diameter, 
+                fruit.ph_level, 
+                fruit.sugar_level
+            ]
+        )
+        all_targets.append(fruit.name)
+        all_one_hot_vectors.append(fruit.one_hot_vector)
     
-    if epoch % 100000 == 0:
-        model.save_data()
-        model.save_data('backup.json')
+    model.batch_training(
+        all_inputs=all_inputs,
+        all_targets=all_targets,
+        output_rule=lambda x:FruitsData.fruits_data[np.argmax(x)][0],
+        all_one_hot_vectors=all_one_hot_vectors
+    )
+
         
     """os.system('cls')
     print(f'''
@@ -72,5 +83,6 @@ axs[1].set_xlabel('Epoch', fontsize=14)
 
 plt.tight_layout()
 plt.show()
+os.remove('model_data.json')
 input()
 #:)

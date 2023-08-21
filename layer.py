@@ -48,6 +48,9 @@ class Layer:
         one_hot_vector: np.ndarray
     ) -> None:
 
+        print(pred_outputs)
+        print('=' * 100)
+        print(one_hot_vector)
         self.grad_outputs = pred_outputs - one_hot_vector
 
         self.grad_weights = np.outer(
