@@ -122,7 +122,7 @@ class NeuralNetwork:
             self.outputs = layer.normalization(self.outputs)
             self.outputs = layer.foward(self.outputs)
             self.outputs = layer.activation(self.outputs)
-
+        
         return self.outputs               
 
     def backward_propagation(
@@ -138,5 +138,5 @@ class NeuralNetwork:
             self._grad_outputs = layer.backward(
                 pred_outputs=self._grad_outputs,
                 one_hot_vector=one_hot_vector
-            )
+            )[0]
 #:)

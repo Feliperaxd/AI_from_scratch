@@ -205,10 +205,10 @@ class Model:
             self._avg_weight_gradients[layer_index] /= batch_size
             self._avg_bias_gradients[layer_index] /= batch_size
         
-        """self.network.update_layers(
+        self.network.update_layers(
             grad_weights=self._avg_weight_gradients,
             grad_biases=self._avg_bias_gradients
-        )"""
+        )
 
     def teste(
         self: 'Model',

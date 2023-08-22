@@ -1,7 +1,6 @@
 import numpy as np
 from typing import Optional, Tuple, Union
 from utils import ActivationFunctions, Normalizers
-import os
 
 class Layer:
 
@@ -24,8 +23,6 @@ class Layer:
 
         self.inputs = None
         self.outputs = None
-        self.a = None
-        self.b = True
         self.grad_weights = None
         self.grad_biases = None
         self.grad_outputs = None
@@ -40,30 +37,17 @@ class Layer:
             a=inputs, 
             b=self.weights
         ) + self.biases
-
+        
         return self.outputs.flatten()
 
     def backward(
         self: 'Layer',
         pred_outputs: np.ndarray,
         one_hot_vector: np.ndarray
-    ) -> None:
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
 
-        try:
-            self.grad_outputs = pred_outputs - one_hot_vector
-            
-            if self.b:
-                self.a = pred_outputs
-                self.b = False
-            else:
-                self.b = True
-
-        except:
-            print(f'--{self.a}--')
-            print(self.a.shape)
-            print(pred_outputs.shape)
-            os._exit(1)
-        
+    
+        self.grad_outputs = pred_outputs - one_hot_vector
         self.grad_weights = np.outer(
             a=self.inputs, 
             b=self.grad_outputs
@@ -73,6 +57,7 @@ class Layer:
             axis=0, 
             keepdims=True
         )
+        return self.grad_outputs, self.grad_weights, self.grad_biases
         
     def update(
         self: 'Layer',
@@ -117,6 +102,6 @@ class Layer:
         else:
             normalization_func = getattr(Normalizers, self.normalizer)
             outputs = normalization_func(inputs)
-        
+            
         return outputs
 #:)

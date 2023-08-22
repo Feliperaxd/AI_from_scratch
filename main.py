@@ -10,28 +10,25 @@ model = Model()
 
 if not os.path.exists('model_data.json'):
     model.create(
-        [(5, 25), (25, 25), (25, 25)], 
-        ['leaky_relu', 'leaky_relu',  'softmax'],
-        ['minmax', 'minmax', 'minmax']
+        [(5, 25)], 
+        ['softmax'],
+        ['minmax']
         )
 else:
-    try:
-        model.load_data()
-    except:
-        model.create(
-            [(5, 25), (25, 25), (25, 25)], 
-            ['leaky_relu', 'leaky_relu',  'softmax'],
-            ['minmax', 'minmax', 'minmax']
-        )
+    model.load_data()
 
 all_inputs = []
 all_targets = []
 all_one_hot_vectors = []
 
-n_epochs = 100
-batch_size = 1
+n_epochs = int(input('n_epochs: ')) + 1
+batch_size = int(input('batch_size: '))
 
 for epoch in range(1, n_epochs):
+    
+    all_inputs.clear()
+    all_targets.clear()
+    all_one_hot_vectors.clear()
     
     for _ in range(batch_size):
         fruit = FakeFruit()
@@ -53,8 +50,6 @@ for epoch in range(1, n_epochs):
         output_rule=lambda x:FruitsData.fruits_data[np.argmax(x)][0],
         all_one_hot_vectors=all_one_hot_vectors
     )
-
-        
     """os.system('cls')
     print(f'''
             ---Progress {(epoch / n_epochs) * 100:.2f}%---
@@ -65,6 +60,7 @@ for epoch in range(1, n_epochs):
             best_acuraccy: {model.best_acuraccy[1]}%
             '''
         )"""
+    
 model.save_data()
 fig, axs = plt.subplots(1, 2, figsize=(12, 5))  
 fig.suptitle(f'Training', fontsize=20)
@@ -89,6 +85,5 @@ axs[1].set_xlabel('Epoch', fontsize=14)
 
 plt.tight_layout()
 plt.show()
-os.remove('model_data.json')
 input()
 #:)

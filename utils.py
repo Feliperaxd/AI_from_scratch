@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from typing import Optional
 
@@ -35,10 +36,9 @@ class Normalizers:
         
         return outputs
 
-
 class ActivationFunctions:
-
-
+    
+    
     @staticmethod
     def sigmoid(
         inputs: np.ndarray
@@ -76,6 +76,6 @@ class ActivationFunctions:
         inputs: np.ndarray
     ) -> np.ndarray:
         
-        outputs = np.exp(inputs) / np.sum(np.exp(inputs))
+        outputs = np.exp(inputs) / np.sum(np.exp(inputs))           
         return outputs
 #:)
