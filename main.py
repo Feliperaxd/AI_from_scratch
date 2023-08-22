@@ -15,18 +15,24 @@ if not os.path.exists('model_data.json'):
         ['minmax', 'minmax', 'minmax']
         )
 else:
-    model.load_data()
+    try:
+        model.load_data()
+    except:
+        model.create(
+            [(5, 25), (25, 25), (25, 25)], 
+            ['leaky_relu', 'leaky_relu',  'softmax'],
+            ['minmax', 'minmax', 'minmax']
+        )
 
 all_inputs = []
 all_targets = []
 all_one_hot_vectors = []
 
-n_epochs = 10
-batch_size = 10
+n_epochs = 100
+batch_size = 1
 
 for epoch in range(1, n_epochs):
     
-    print('-' * 100)
     for _ in range(batch_size):
         fruit = FakeFruit()
         all_inputs.append(

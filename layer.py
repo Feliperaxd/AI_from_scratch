@@ -1,7 +1,7 @@
 import numpy as np
 from typing import Optional, Tuple, Union
 from utils import ActivationFunctions, Normalizers
-
+import os
 
 class Layer:
 
@@ -24,7 +24,8 @@ class Layer:
 
         self.inputs = None
         self.outputs = None
-        
+        self.a = None
+        self.b = True
         self.grad_weights = None
         self.grad_biases = None
         self.grad_outputs = None
@@ -48,11 +49,21 @@ class Layer:
         one_hot_vector: np.ndarray
     ) -> None:
 
-        print(pred_outputs)
-        print('=' * 100)
-        print(one_hot_vector)
-        self.grad_outputs = pred_outputs - one_hot_vector
+        try:
+            self.grad_outputs = pred_outputs - one_hot_vector
+            
+            if self.b:
+                self.a = pred_outputs
+                self.b = False
+            else:
+                self.b = True
 
+        except:
+            print(f'--{self.a}--')
+            print(self.a.shape)
+            print(pred_outputs.shape)
+            os._exit(1)
+        
         self.grad_weights = np.outer(
             a=self.inputs, 
             b=self.grad_outputs

@@ -157,9 +157,9 @@ class Model:
     ) -> None: 
         
         outputs = self.network.foward_propagation(np.array(inputs))
-        self.network.backward_propagation(one_hot_vector)    
-        output = output_rule(outputs)    
-        
+        self.network.backward_propagation(one_hot_vector)   
+        output = output_rule(outputs)   
+
         #  Add in the list to calculate the average!
         #  NOTE: This list must have previously a zero for each layer! 
         for layer_index, (gw, gb) in enumerate(zip(*self.network.get_layers_gradients())):
