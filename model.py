@@ -32,8 +32,10 @@ class Model:
         self._threads = []
         self._hit_count = 0
         self._count_to_set_accuracy = 0
-        self._avg_weight_gradients = []
-        self._avg_bias_gradients = []
+        
+        self._batch_networks = []
+        self._avg_weight_gradients = None
+        self._avg_bias_gradients = None
 
     def create(
         self: 'Model',
@@ -156,15 +158,12 @@ class Model:
         one_hot_vector: np.ndarray
     ) -> None: 
         
-        outputs = self.network.foward_propagation(np.array(inputs))
-        self.network.backward_propagation(one_hot_vector)   
-        output = output_rule(outputs)   
+        network_copy = self.network
+        outputs = network_copy.foward_propagation(np.array(inputs))
+        network_copy.backward_propagation(one_hot_vector)   
+        output = output_rule(outputs)
 
-        #  Add in the list to calculate the average!
-        #  NOTE: This list must have previously a zero for each layer! 
-        for layer_index, (gw, gb) in enumerate(zip(*self.network.get_layers_gradients())):
-            self._avg_weight_gradients[layer_index] += gw
-            self._avg_bias_gradients[layer_index] += gb
+        self._batch_networks.append(network_copy)
             
         self._metric_count(
             target=target,
@@ -180,12 +179,10 @@ class Model:
     )  -> None:
         
         batch_size = len(all_inputs)
-        
-        #  Adding a zero per layer!
-        self._avg_weight_gradients = [0 for _ in range(len(self.network.layers))]
-        self._avg_bias_gradients = [0 for _ in range(len(self.network.layers))]
-
         self._threads.clear()
+        self._batch_networks.clear()
+        self._avg_weight_gradients = 0
+        self._avg_bias_gradients = 0
 
         for inputs, target, one_hot_vector in zip(all_inputs, all_targets, all_one_hot_vectors):
             thread = threading.Thread(
@@ -201,10 +198,14 @@ class Model:
         for thread in self._threads:
             thread.join()
 
-        for layer_index in range(len(self.network.layers)):
-            self._avg_weight_gradients[layer_index] /= batch_size
-            self._avg_bias_gradients[layer_index] /= batch_size
-        
+        for network in self._batch_networks:
+            gradients = network.get_layers_gradients()
+            self._avg_weight_gradients += gradients[0]
+            self._avg_bias_gradients += gradients[1]
+
+        self._avg_weight_gradients /= batch_size
+        self._avg_bias_gradients /= batch_size
+
         self.network.update_layers(
             grad_weights=self._avg_weight_gradients,
             grad_biases=self._avg_bias_gradients

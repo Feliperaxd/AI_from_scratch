@@ -70,7 +70,7 @@ class NeuralNetwork:
         
     def get_layers_parameters(
         self: 'NeuralNetwork'
-    ) -> Tuple[List[np.ndarray], List[np.ndarray]]:
+    ) -> Tuple[np.ndarray, np.ndarray]:
         
         self._weights.clear()
         self._biases.clear()
@@ -79,11 +79,11 @@ class NeuralNetwork:
             self._weights.append(layer.weights)
             self._biases.append(layer.biases)
         
-        return self._weights, self._biases
+        return np.array(self._weights), np.array(self._biases)
     
     def get_layers_gradients(
         self: 'NeuralNetwork'
-    ) -> Tuple[List[np.ndarray], List[np.ndarray]]:
+    ) -> Tuple[np.ndarray, np.ndarray]:
         
         self._grad_weights.clear()
         self._grad_biases.clear()
@@ -92,7 +92,7 @@ class NeuralNetwork:
             self._grad_weights.append(layer.grad_weights)
             self._grad_biases.append(layer.grad_biases)
         
-        return self._grad_weights, self._grad_biases
+        return np.array(self._grad_weights), np.array(self._grad_biases)
         
     def update_layers(
         self: 'NeuralNetwork',
