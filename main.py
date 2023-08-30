@@ -50,6 +50,9 @@ for epoch in range(1, n_epochs):
         output_rule=lambda x:FruitsData.fruits_data[np.argmax(x)][0],
         all_one_hot_vectors=all_one_hot_vectors
     )
+
+    if epoch % 1000 == 0:
+        print(epoch)
     """os.system('cls')
     print(f'''
             ---Progress {(epoch / n_epochs) * 100:.2f}%---

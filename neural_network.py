@@ -139,4 +139,5 @@ class NeuralNetwork:
                 pred_outputs=self._grad_outputs,
                 one_hot_vector=one_hot_vector
             )[0]
+        self._grad_outputs = None
 #:)

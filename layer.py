@@ -46,7 +46,6 @@ class Layer:
         one_hot_vector: np.ndarray
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
 
-    
         self.grad_outputs = pred_outputs - one_hot_vector
         self.grad_weights = np.outer(
             a=self.inputs, 
@@ -70,8 +69,8 @@ class Layer:
         if grad_biases is not None:    
             self.grad_biases = grad_biases
             
-        self.weights -= 0.01 * self.grad_weights
-        self.biases -= 0.01 * self.grad_biases
+        self.weights -= 1 * self.grad_weights
+        self.biases -= 1 * self.grad_biases
         
         self.grad_weights = None
         self.grad_biases = None
