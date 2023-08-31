@@ -34,8 +34,8 @@ class Model:
         self._count_to_set_accuracy = 0
         
         self._batch_networks = []
-        self._avg_weight_gradients = None
-        self._avg_bias_gradients = None
+        self._avg_weight_gradients = []
+        self._avg_bias_gradients = []
 
     def create(
         self: 'Model',
@@ -181,8 +181,8 @@ class Model:
         batch_size = len(all_inputs)
         self._threads.clear()
         self._batch_networks.clear()
-        self._avg_weight_gradients = 0
-        self._avg_bias_gradients = 0
+        self._avg_weight_gradients.clear()
+        self._avg_bias_gradients.clear()
 
         for inputs, target, one_hot_vector in zip(all_inputs, all_targets, all_one_hot_vectors):
             thread = threading.Thread(
@@ -198,14 +198,31 @@ class Model:
         for thread in self._threads:
             thread.join()
 
+
+        #  Calculate average gradients by summing all gradients from batch networks!
         for network in self._batch_networks:
             gradients = network.get_layers_gradients()
-            self._avg_weight_gradients += gradients[0]
-            self._avg_bias_gradients += gradients[1]
+            
+            #  Initialize and sum weight gradients!
+            if len(self._avg_weight_gradients) == 0:
+                self._avg_weight_gradients = gradients[0]
+            else:
+                for grad_1, grad_2 in zip(self._avg_weight_gradients, gradients[0]):
+                    self._avg_weight_gradients.append(grad_1 + grad_2)
+            # GRADIENTE EXPLODINDO TEM Q LIMPARA A LISTA
+            #  Initialize and sum bias gradients!
+            if len(self._avg_bias_gradients) == 0:
+                self._avg_bias_gradients = gradients[1]
+            else:
+                for grad_1, grad_2 in zip(self._avg_bias_gradients, gradients[1]):
+                    self._avg_bias_gradients.append(grad_1 + grad_2)
 
-        self._avg_weight_gradients /= batch_size
-        self._avg_bias_gradients /= batch_size
+        for layer_index, (layer_grad_weights, layer_grad_bias) in enumerate(
+            zip(self._avg_weight_gradients, self._avg_bias_gradients)):
 
+            self._avg_weight_gradients[layer_index] = layer_grad_weights / batch_size
+            self._avg_bias_gradients[layer_index] = layer_grad_bias / batch_size
+    
         self.network.update_layers(
             grad_weights=self._avg_weight_gradients,
             grad_biases=self._avg_bias_gradients

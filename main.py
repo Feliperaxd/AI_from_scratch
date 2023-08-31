@@ -10,13 +10,13 @@ model = Model()
 
 if not os.path.exists('model_data.json'):
     model.create(
-        [(5, 25)], 
-        ['softmax'],
+        [(5, 25), (25, 25)], 
+        ['leaky_relu', 'softmax'],
         ['minmax']
         )
 else:
     model.load_data()
-
+    
 all_inputs = []
 all_targets = []
 all_one_hot_vectors = []
