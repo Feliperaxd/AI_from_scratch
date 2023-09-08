@@ -1,5 +1,4 @@
 import json
-import threading
 import numpy as np
 from neural_network import NeuralNetwork
 from utils import ActivationFunctions, Normalizers
@@ -16,7 +15,7 @@ class Model:
         #  Others!
         self.data = None
         self.network = None
-        
+
         #  Metrics!       
         self.score = 0
         self.acuraccy = 0
@@ -33,43 +32,13 @@ class Model:
         self._hit_count = 0
         self._count_to_set_accuracy = 0
         
-        self._batch_networks = []
-        self._avg_weight_gradients = []
-        self._avg_bias_gradients = []
-
-    def create(
-        self: 'Model',
-        shape: List[Tuple[int, int]], #  Layer = (n_inputs, n_neurons)
-        activators: List[Union[ActivationFunctions, str]], #  Each funcion will be used on a layer
-        normalizers: Optional[List[Union[Normalizers, str]]] = None,
-        data_path: Optional[str] = 'model_data.json'
-    ) -> None:
-        
-        self.data = {}
-        self.network = NeuralNetwork(
-            shape=shape,
-            activators=activators,
-            normalizers=normalizers
-        )
-        self.network.inject_layers()
-        
-        with open(data_path, 'w') as file:
-            file.seek(0)        
-            json.dump(self.data, file)
-        
     def save_data(
         self: 'Model',
         data_path: Optional[str] = 'model_data.json'
     ) -> None:
-    
-        weights = []
-        biases = []
-        for layer_weights, layer_biases in zip(*self.network.get_layers_parameters()):
-            weights.append(layer_weights.tolist())
-            biases.append(layer_biases.tolist())
         
         self.data = {
-            #  Architecture!
+            #  Network Architecture!
             'shape': self.network.shape,
             'activators': self.network.activators,
             'normalizers': self.network.normalizers,
@@ -86,8 +55,8 @@ class Model:
             'accuracy_history': self.accuracy_history,
 
             #  Tensors!
-            'weights': weights,
-            'biases': biases
+            'weights': [layer.weights for layer in self.network.layers],
+            'biases': [layer.biases for layer in self.network.layers]
         }
 
         with open(data_path, 'w') as file:
@@ -95,13 +64,17 @@ class Model:
             json.dump(self.data, file)
         
     def load_data(
-        self: 'NeuralNetwork',
+        self: 'Model',
         data_path: Optional[str] = 'model_data.json'
     ) -> None:
         
         with open(data_path, 'r') as file:
             self.data = json.load(file)
-                        
+
+        #  Architecture!    
+    
+        
+
         #  Metrics!
         self.score = self.data['score']
         self.acuraccy = self.data['acuraccy']
@@ -112,16 +85,6 @@ class Model:
         #  Histories!
         self.score_history = self.data['score_history']
         self.accuracy_history = self.data['accuracy_history']
-        
-        self.network = NeuralNetwork(
-            shape=self.data['shape'],
-            activators=self.data['activators'],
-            normalizers=self.data['normalizers']
-        )
-        self.network.inject_layers(
-            weights=[np.array(x) for x in self.data['weights']],
-            biases=[np.array(x) for x in self.data['biases']]
-        )        
         
     def _metric_count(
         self: 'Model',
@@ -150,89 +113,21 @@ class Model:
         if self.score > self.best_score[1]:
             self.best_score = (self.total_epochs, self.score)   
     
-    def _batch_foward_process(
+    def learn(
         self: 'Model',
         inputs: List[int],
-        target: List[Any],
+        target: Any,
         output_rule: Callable[[Any], Any],
         one_hot_vector: np.ndarray
     ) -> None: 
         
-        network_copy = self.network
-        outputs = network_copy.foward_propagation(np.array(inputs))
-        network_copy.backward_propagation(one_hot_vector)   
+        outputs = self.network.foward_propagation(np.array(inputs))
+        self.network.backward_propagation(one_hot_vector)
+        self.network.update_layers(learning_rate=0.1)
         output = output_rule(outputs)
-
-        self._batch_networks.append(network_copy)
             
         self._metric_count(
             target=target,
             output=output
         )
-        
-    def batch_training(
-        self: 'Model',
-        all_inputs: List[List[int]],
-        all_targets: List[Any],
-        output_rule: Callable[[Any], Any],
-        all_one_hot_vectors: List[np.ndarray]
-    )  -> None:
-        
-        batch_size = len(all_inputs)
-        self._threads.clear()
-        self._batch_networks.clear()
-        self._avg_weight_gradients.clear()
-        self._avg_bias_gradients.clear()
-
-        for inputs, target, one_hot_vector in zip(all_inputs, all_targets, all_one_hot_vectors):
-            thread = threading.Thread(
-                target=self._batch_foward_process,
-                args=(
-                    inputs, target, 
-                    output_rule, one_hot_vector
-                )
-            )
-            self._threads.append(thread)
-            thread.start()
-
-        for thread in self._threads:
-            thread.join()
-
-
-        #  Calculate average gradients by summing all gradients from batch networks!
-        for network in self._batch_networks:
-            gradients = network.get_layers_gradients()
-            
-            #  Initialize and sum weight gradients!
-            if len(self._avg_weight_gradients) == 0:
-                self._avg_weight_gradients = gradients[0]
-            else:
-                for grad_1, grad_2 in zip(self._avg_weight_gradients, gradients[0]):
-                    self._avg_weight_gradients.append(grad_1 + grad_2)
-            # GRADIENTE EXPLODINDO TEM Q LIMPARA A LISTA
-            #  Initialize and sum bias gradients!
-            if len(self._avg_bias_gradients) == 0:
-                self._avg_bias_gradients = gradients[1]
-            else:
-                for grad_1, grad_2 in zip(self._avg_bias_gradients, gradients[1]):
-                    self._avg_bias_gradients.append(grad_1 + grad_2)
-
-        for layer_index, (layer_grad_weights, layer_grad_bias) in enumerate(
-            zip(self._avg_weight_gradients, self._avg_bias_gradients)):
-
-            self._avg_weight_gradients[layer_index] = layer_grad_weights / batch_size
-            self._avg_bias_gradients[layer_index] = layer_grad_bias / batch_size
-    
-        self.network.update_layers(
-            grad_weights=self._avg_weight_gradients,
-            grad_biases=self._avg_bias_gradients
-        )
-
-    def teste(
-        self: 'Model',
-        inputs: np.ndarray,
-        output_rule: Callable[[Any], Any],
-    ) -> Any:
-             
-        pass
 #:)

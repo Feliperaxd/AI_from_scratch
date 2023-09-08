@@ -1,21 +1,23 @@
 import numpy as np
-from typing import Optional, Tuple, Union
-from utils import ActivationFunctions, Normalizers
+from typing import Optional, Union
+from utils import ActivationFunctions, Normalizers, LearningRateManager
 
 class Layer:
 
 
     def __init__(
         self: 'Layer',
-        activator: Union[ActivationFunctions, str],
         weights: np.ndarray,
         biases: np.ndarray,
-        normalizer: Optional[Union[ActivationFunctions, str]] = None
+        activator: ActivationFunctions,
+        learning_rate: Union[LearningRateManager, float],
+        normalizer: Optional[Normalizers] = None
     ) -> None:
         
-        self.activator = activator
         self.weights = weights
         self.biases = biases
+        self.activator = activator
+        self.learning_rate = learning_rate
         self.normalizer = normalizer
 
         self.n_inputs = np.size(weights, axis=0)
@@ -44,9 +46,10 @@ class Layer:
         self: 'Layer',
         pred_outputs: np.ndarray,
         one_hot_vector: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    ) -> np.ndarray:
 
         self.grad_outputs = pred_outputs - one_hot_vector
+        
         self.grad_weights = np.outer(
             a=self.inputs, 
             b=self.grad_outputs
@@ -56,36 +59,22 @@ class Layer:
             axis=0, 
             keepdims=True
         )
-        return self.grad_outputs, self.grad_weights, self.grad_biases
+        return self.grad_outputs
         
     def update(
         self: 'Layer',
-        grad_weights: Optional[float] = None,
-        grad_biases: Optional[float] = None
+        learning_rate: int, 
     ) -> None:
-        
-        if grad_weights is not None:
-            self.grad_weights = grad_weights
-        if grad_biases is not None:    
-            self.grad_biases = grad_biases
             
-        self.weights -= 1 * self.grad_weights
-        self.biases -= 1 * self.grad_biases
-        
-        self.grad_weights = None
-        self.grad_biases = None
+        self.weights -= learning_rate * self.grad_weights
+        self.biases -= learning_rate * self.grad_biases
 
     def activation(
         self: 'Layer',
         inputs: np.ndarray
     ) -> np.ndarray:
 
-        if callable(self.activator):
-            self.outputs = self.activator(inputs)
-        else:
-            activation_func = getattr(ActivationFunctions, self.activator)
-            self.outputs = activation_func(inputs)
-
+        self.outputs = self.activator(inputs)
         return self.outputs
 
     def normalization(
@@ -94,13 +83,9 @@ class Layer:
     ) -> np.ndarray:
         
         if self.normalizer is None:
-            return inputs
-        
-        if callable(self.normalizer):
-            outputs = self.normalizer(inputs)
+            outputs = inputs
         else:
-            normalization_func = getattr(Normalizers, self.normalizer)
-            outputs = normalization_func(inputs)
-            
+            outputs = self.normalizer(inputs)   
+
         return outputs
 #:)

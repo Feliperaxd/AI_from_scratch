@@ -1,7 +1,34 @@
 import os
 import numpy as np
-from typing import Optional
+from typing import Optional, Tuple
 
+class LearningRateManager:
+
+
+    def __init__(
+        self: 'LearningRateManager'
+    ) -> None:
+        
+        self.learning_rate
+
+
+class Initializers:
+
+
+    @staticmethod
+    def random_weights(
+        layer_shape: Tuple[int, int]
+    ) -> np.ndarray:
+        
+        return 0.10 * np.random.randn(layer_shape[0], layer_shape[1])
+
+    @staticmethod
+    def zeros_biases(
+        layer_shape: Tuple[int, int]
+    ) -> np.ndarray:
+        
+        return np.zeros((1, layer_shape[1]))
+    
 class LossCalculations:
     
     
@@ -23,7 +50,7 @@ class LossCalculations:
         return loss
 
 class Normalizers:
-    
+
     
     @staticmethod
     def minmax(
@@ -76,6 +103,6 @@ class ActivationFunctions:
         inputs: np.ndarray
     ) -> np.ndarray:
 
-        outputs = np.exp(inputs) / np.sum(np.exp(inputs))           
-        return outputs
+        exp_inputs = np.exp(inputs - np.max(inputs))
+        return exp_inputs / np.sum(exp_inputs)
 #:)
