@@ -1,4 +1,12 @@
 
-a = [1 if x == 5 else 0 for x in range(10)]
-print(a)
+def teste(
+    a, b, c
+): 
+    print(a)
+    print(b)
+    print(c)
 
+
+b = teste, {'b': 20, 'a': 10, 'c': 30}
+
+b[0](**b[1])

@@ -49,16 +49,33 @@ class NeuralNetwork:
         for layer in self.layers:
             self.shape.append((layer.n_inputs, layer.n_neurons))
 
+    def reset_metrics(
+        self: 'NeuralNetwork'
+    ) -> None:
+        
+        self.total_epochs = 0
+        self.loss = 1 
+        self.score = 0
+        self.acuraccy = 0
+        self.best_loss = (0, 0)
+        self.best_score = (0, 0)
+        self.best_acuraccy = (0, 0)
+
+        self.loss_history = []
+        self.score_history = []
+        self.accuracy_history = []
+
     def save_data(
         self: 'NeuralNetwork',
         data_path: Optional[str] = 'model_data.json'
     ) -> None:
         
-        self.data = {
+        data = {
             #  Architecture!
             'shape': self.shape,
-            'activators': [x.activator.__qualname__ for x in self.layers],
-            
+            'activators': [layer.activator.__qualname__ for layer in self.layers],
+            'activators_parameters': [layer.activator_parameters for layer in self.layers],
+
             #  Metrics!
             'total_epochs': self.total_epochs,
             'loss': self.loss,
@@ -79,7 +96,7 @@ class NeuralNetwork:
 
         with open(data_path, 'w') as file:
             file.seek(0)        
-            json.dump(self.data, file)
+            json.dump(data, file)
     
     def load_data(
         self: 'NeuralNetwork',
@@ -87,37 +104,40 @@ class NeuralNetwork:
     ) -> None:
         
         with open(data_path, 'r') as file:
-            self.data = json.load(file)
+            data = json.load(file)
 
         #  Architecture!
-        self.shape = self.data['shape']
+        self.shape = data['shape']
 
-        for weights, biases, activator in zip(
-            self.data['weights'], self.data['biases'], self.data['activators']):
+        for weights, biases, activator, activator_parameters in zip(
+            data['weights'], data['biases'], data['activators'], data['activators_parameters']):
+    
             self.layers.append(
                 Layer(
                     weights=weights,
                     biases=biases,
                     activator=getattr(
-                        globals()[activator.split('.')[0]], #  Getting the class reference!
-                        activator.split('.')[1]             #  Getting the function reference!
-                    )
+                        globals()[activator.split('.')[0]], #  Getting the class name!
+                        activator.split('.')[1]             #  Getting the function name!
+                    ),
+                    activator_parameters=activator_parameters
                 )    
             )
+
         self.create(layers=self.layers)
         
         #  Metrics!
-        self.total_epochs = self.data['total_epochs']
-        self.loss = self.data['loss']
-        self.score = self.data['score']
-        self.acuraccy = self.data['acuraccy']
-        self.best_loss = self.data['best_loss']
-        self.best_score = self.data['best_score']
-        self.best_acuraccy = self.data['best_acuraccy']
+        self.total_epochs = data['total_epochs']
+        self.loss = data['loss']
+        self.score = data['score']
+        self.acuraccy = data['acuraccy']
+        self.best_loss = data['best_loss']
+        self.best_score = data['best_score']
+        self.best_acuraccy = data['best_acuraccy']
         
         #  Histories!
-        self.score_history = self.data['score_history']
-        self.accuracy_history = self.data['accuracy_history']
+        self.score_history = data['score_history']
+        self.accuracy_history = data['accuracy_history']
             
     def update_layers(
         self: 'NeuralNetwork',
@@ -214,4 +234,24 @@ class NeuralNetwork:
             one_hot=one_hot,
             pred_outputs=outputs
         )
+    
+    def predict(
+        self: 'NeuralNetwork',
+        inputs: List[int],
+        target: Any,
+        one_hot: np.ndarray,
+        output_rule: Callable[[Any], Any]
+    ) -> np.ndarray:
+        
+        outputs = self.foward_propagation(np.array(inputs, dtype=np.float64))
+        output = output_rule(outputs)
+
+        self._metric_count(
+            target=target,
+            output=output,
+            one_hot=one_hot,
+            pred_outputs=outputs
+        )
+
+        return outputs, output
 #:)

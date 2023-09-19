@@ -1,5 +1,6 @@
 import numpy as np
 from utils import ActivationFunctions
+from typing import Any, Optional
 
 class Layer:
 
@@ -9,11 +10,13 @@ class Layer:
         weights: np.ndarray,
         biases: np.ndarray,
         activator: ActivationFunctions,
+        activator_parameters: Optional[Any] = None
     ) -> None:
         
         self.weights = weights
         self.biases = biases
         self.activator = activator
+        self.activator_parameters = activator_parameters
 
         self.n_inputs = np.size(weights, axis=0)
         self.n_neurons = np.size(weights, axis=1)
@@ -68,6 +71,10 @@ class Layer:
         inputs: np.ndarray
     ) -> np.ndarray:
 
-        self.outputs = self.activator(inputs)
+        if self.activator_parameters is not None:
+            self.outputs = self.activator(inputs, **self.activator_parameters)
+        else:
+            self.outputs = self.activator(inputs)
+    
         return self.outputs
 #:)

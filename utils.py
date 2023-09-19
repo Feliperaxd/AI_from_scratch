@@ -59,41 +59,83 @@ class ActivationFunctions:
     
     @staticmethod
     def sigmoid(
-        inputs: np.ndarray
+        inputs: np.ndarray,
+        derivative: Optional[bool] = False
     ) -> np.ndarray:
 
-        return np.exp(-inputs) / ((np.exp(-inputs) + 1) ** 2)
+        if not derivative:
+            outputs = 1 / (1 + np.exp(-inputs))
+
+        elif derivative:
+            s = 1 / (1 + np.exp(-inputs))
+            outputs = s * (1 - s)
+
+        return outputs
 
     @staticmethod
     def relu(
-        inputs: np.ndarray
+        inputs: np.ndarray,
+        derivative: Optional[bool] = False
     ) -> np.ndarray:
 
-        outputs = np.maximum(0, inputs)
+        if not derivative:
+            outputs = np.maximum(0, inputs)
+
+        elif derivative:
+            outputs = np.where(inputs >= 0, 1, 0)
+        
         return outputs
 
     @staticmethod
     def leaky_relu(
         inputs: np.ndarray,
-        slope: Optional[float] = 0.01
+        slope: Optional[float] = 0.01,
+        derivative: Optional[bool] = False
     ) -> np.ndarray:
         
-        outputs = np.maximum(slope * inputs, inputs)
+        if not derivative:
+            outputs = np.maximum(slope * inputs, inputs)
+
+        elif derivative:
+            outputs = np.where(inputs >= 0, 1, slope)
+
         return outputs
         
     @staticmethod
     def tanh(
-        inputs: np.ndarray
+        inputs: np.ndarray,
+        derivative: Optional[bool] = False
     ) -> np.ndarray:
 
-        outputs = np.tanh(inputs)
+        if not derivative:
+            outputs = np.tanh(inputs)
+
+        elif derivative:
+            outputs = 1 - np.tanh(inputs)**2
+
         return outputs
 
     @staticmethod
     def softmax(
-        inputs: np.ndarray
+        inputs: np.ndarray,
+        derivative: Optional[bool] = False
     ) -> np.ndarray:
 
-        exp_inputs = np.exp(inputs - np.max(inputs))
-        return exp_inputs / np.sum(exp_inputs)
+        if not derivative:
+            exp_inputs = np.exp(inputs - np.max(inputs))
+            outputs = exp_inputs / np.sum(exp_inputs)
+
+        elif derivative:
+            num_categories= len(inputs)
+            jacobian_matrix = np.zeros((num_categories, num_categories))
+
+            for i in range(num_categories):
+                for j in range(num_categories):
+                    if i == j:
+                        jacobian_matrix[i, j] = inputs[i] * (1 - inputs[i])
+                    else:
+                        jacobian_matrix[i, j] = -inputs[i] * inputs[j]
+            outputs = jacobian_matrix
+
+        return outputs
 #:)
