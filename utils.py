@@ -2,15 +2,6 @@ import os
 import numpy as np
 from typing import Optional, Tuple
 
-class LearningRateManager:
-
-
-    def __init__(
-        self: 'LearningRateManager'
-    ) -> None:
-        
-        self.learning_rate
-
 
 class Initializers:
 

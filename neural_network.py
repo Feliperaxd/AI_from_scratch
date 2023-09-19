@@ -16,24 +16,25 @@ class NeuralNetwork:
         self.outputs = None
         
         #  Architecture!
-        self.shape = None
-        self.layers = None
-        self.activators = None
-        self.normalizers = None
-
-        #  Metrics!       
+        self.shape = []
+        self.layers = []
+        
+        #  Metrics!      
+        self.total_epochs = 0
+        self.loss = 1 
         self.score = 0
         self.acuraccy = 0
-        self.total_epochs = 0
+        self.best_loss = (0, 0) #  (Epoch, Loss)
         self.best_score = (0, 0) #  (Epoch, Score)
         self.best_acuraccy = (0, 0) #  (Epoch, Acuraccy)
         
         #  Histories!        
+        self.loss_history = []
         self.score_history = []
         self.accuracy_history = []
         
         #  Private!
-        self._grad_outputs = None
+        self._grad_out = None
         self._hit_count = 0
         self._count_to_set_accuracy = 0
     
@@ -44,13 +45,9 @@ class NeuralNetwork:
         
         self.shape = []
         self.layers = layers
-        self.activators = []
-        self.normalizers = []
 
         for layer in self.layers:
             self.shape.append((layer.n_inputs, layer.n_neurons))
-            self.activators.append(layer.activator)
-            self.normalizers.append(layer.normalizer)
 
     def save_data(
         self: 'NeuralNetwork',
@@ -60,13 +57,14 @@ class NeuralNetwork:
         self.data = {
             #  Architecture!
             'shape': self.shape,
-            'activators': [x.__qualname__ for x in self.activators],
-            'normalizers': [x.__qualname__ for x in self.normalizers if x is not None],
+            'activators': [x.activator.__qualname__ for x in self.layers],
             
             #  Metrics!
+            'total_epochs': self.total_epochs,
+            'loss': self.loss,
             'score': self.score,
             'acuraccy': self.acuraccy,
-            'total_epochs': self.total_epochs, 
+            'best_loss': self.best_loss, 
             'best_score': self.best_score,
             'best_acuraccy': self.best_acuraccy,
             
@@ -93,10 +91,9 @@ class NeuralNetwork:
 
         #  Architecture!
         self.shape = self.data['shape']
-        self.layers = []
 
-        for weights, biases, activator, normalizer in zip(
-            self.data['weights'], self.data['biases'], self.data['activators'], self.data['normalizers']):
+        for weights, biases, activator in zip(
+            self.data['weights'], self.data['biases'], self.data['activators']):
             self.layers.append(
                 Layer(
                     weights=weights,
@@ -104,19 +101,17 @@ class NeuralNetwork:
                     activator=getattr(
                         globals()[activator.split('.')[0]], #  Getting the class reference!
                         activator.split('.')[1]             #  Getting the function reference!
-                    ),
-                    normalizer=getattr(
-                        globals()[normalizer.split('.')[0]], 
-                        normalizer.split('.')[1]
                     )
                 )    
             )
         self.create(layers=self.layers)
-
+        
         #  Metrics!
+        self.total_epochs = self.data['total_epochs']
+        self.loss = self.data['loss']
         self.score = self.data['score']
         self.acuraccy = self.data['acuraccy']
-        self.total_epochs = self.data['total_epochs']
+        self.best_loss = self.data['best_loss']
         self.best_score = self.data['best_score']
         self.best_acuraccy = self.data['best_acuraccy']
         
@@ -125,11 +120,12 @@ class NeuralNetwork:
         self.accuracy_history = self.data['accuracy_history']
             
     def update_layers(
-        self: 'NeuralNetwork'
+        self: 'NeuralNetwork',
+        learning_rate: float
     ) -> None:
         
         for layer in self.layers:
-            layer.update()
+            layer.update(learning_rate)
         
     def foward_propagation(
         self: 'NeuralNetwork',
@@ -139,7 +135,6 @@ class NeuralNetwork:
         self.inputs = inputs
         self.outputs = inputs
         for layer in self.layers:
-            self.outputs = layer.normalization(self.outputs)
             self.outputs = layer.foward(self.outputs)
             self.outputs = layer.activation(self.outputs)
 
@@ -147,62 +142,76 @@ class NeuralNetwork:
 
     def backward_propagation(
         self: 'NeuralNetwork',
-        one_hot_vector: np.ndarray,
+        one_hot: np.ndarray
     ) -> None:
         
         reversed_layers = list(reversed(self.layers))
         for layer in reversed_layers:
-            if self._grad_outputs is None:
-                self._grad_outputs = self.outputs
+            if self._grad_out is None:
+                self._grad_out = self.outputs
            
-            self._grad_outputs = layer.backward(
-                pred_outputs=self._grad_outputs,
-                one_hot_vector=one_hot_vector
+            self._grad_out = layer.backward(
+                one_hot=one_hot,
+                pred_outputs=self._grad_out
             )
-        self._grad_outputs = None
+        self._grad_out = None
     
     def _metric_count(
         self: 'NeuralNetwork',
         target: Any,
-        output: Any
+        output: Any,
+        one_hot: np.ndarray,
+        pred_outputs: np.ndarray
     ) -> None:
         
         self.total_epochs += 1
         self._count_to_set_accuracy += 1
         
+        self.loss = LossCalculations.categorical_crossentropy(
+            one_hot_vector=one_hot,
+            predicted_output=pred_outputs
+        )
+
         if target == output:
             self.score += 1
             self._hit_count += 1
         else: 
             self.score -= 1        
-        
-        self.score_history.append(self.score)
+
         if self._count_to_set_accuracy % 1000 == 0:
-            self.acuraccy = float(f'{(self._hit_count / 1000) * 100:.3f}')           
-            self.accuracy_history.append(self.acuraccy)
+            self.acuraccy = self._hit_count / 1000           
             self._hit_count = 0
             self._count_to_set_accuracy = 0
-            
-        if self.acuraccy > self.best_acuraccy[1]:
-            self.best_acuraccy = (self.total_epochs, self.acuraccy)       
+
+        self.loss_history.append(self.loss)
+        self.score_history.append(self.score)
+        self.accuracy_history.append(self.acuraccy)
+
+        if self.loss < self.best_loss[1]:
+            self.best_loss = (self.total_epochs, self.loss)
         if self.score > self.best_score[1]:
             self.best_score = (self.total_epochs, self.score)   
-
-    def learn(
+        if self.acuraccy > self.best_acuraccy[1]:
+            self.best_acuraccy = (self.total_epochs, self.acuraccy)       
+        
+    def fit(
         self: 'NeuralNetwork',
         inputs: List[int],
         target: Any,
+        one_hot: np.ndarray,
         output_rule: Callable[[Any], Any],
-        one_hot_vector: np.ndarray
+        learning_rate: float
     ) -> None: 
         
         outputs = self.foward_propagation(np.array(inputs, dtype=np.float64))
-        self.backward_propagation(one_hot_vector)
-        self.update_layers()
+        self.backward_propagation(one_hot)
+        self.update_layers(learning_rate)
         output = output_rule(outputs)
             
         self._metric_count(
             target=target,
-            output=output
+            output=output,
+            one_hot=one_hot,
+            pred_outputs=outputs
         )
 #:)

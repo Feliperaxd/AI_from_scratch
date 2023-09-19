@@ -1,8 +1,4 @@
-from neural_network import NeuralNetwork
-from layer import Layer
-from utils import *
 
-a = [0, 1, 2, 3, 4, 5]
+a = [1 if x == 5 else 0 for x in range(10)]
+print(a)
 
-
-print(ActivationFunctions.softmax(a))
